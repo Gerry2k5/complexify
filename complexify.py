@@ -3,23 +3,22 @@
 import argparse
 import sys
 
-# ASCII codes for different character classes
-char_lcase = list(range(97, 123))
-char_ucase = list(range(65, 91))
-char_numbers = list(range(48, 58))
-char_symbols = list(range(33, 48))
-char_symbols.extend(list(range(58, 65)))
-char_symbols.extend(list(range(91, 97)))
-char_symbols.extend(list(range(123, 127)))
-
-# Remove symbols which should not be used as replacements, to avoid
-# characters which may be difficult to use on console sessions
-# as well as minimising the risk of causing SQL errors on broken systems
-symbols_donotuse = [32, 34, 39, 92, 96, 124]
-char_symbols = list(set(char_symbols) - set(symbols_donotuse))
-
-
 def main():
+    # Define character classes using ASCII codes
+    lcase_letters = [chr(c) for c in range(97, 123)]
+    ucase_letters = [chr(c) for c in range(65, 91)]
+    numbers = [chr(c) for c in range(48, 58)]
+    symbols = [chr(c) for c in range(33, 48)]
+    symbols.extend([chr(c) for c in range(58, 65)])
+    symbols.extend([chr(c) for c in range(91, 97)])
+    symbols.extend([chr(c) for c in range(123, 127)])
+
+    # Remove symbols which should not be used as replacements, to avoid
+    # characters which may be difficult to use on console sessions
+    # as well as minimising the risk of causing SQL errors on broken systems
+    sym_donotuse = [chr(c) for c in [32, 34, 39, 92, 96, 124]]
+    symbols = list(set(symbols) - set(sym_donotuse))
+
     default_char_count = 3
     default_ignore_chars = " "
     default_basestring = ""
@@ -53,14 +52,36 @@ def main():
         print("Base String must be at least 4 characters")
         exit(1)
 
-    string_dict = classify(args.basestring)
+    char_classes = [lcase_letters, ucase_letters, numbers, symbols]
+    char_dict = classify(args.basestring, char_classes)
+    print(char_dict)
 
 
-def classify(base_string):
-    # Build dicts containing incidences of each character class in string
-    # with the index of that character in the string as the key to the dict
-    for index in range(len(base_string)):
-        print("{} {}".format(index, base_string[index]))
+
+def classify(base_string, classes_in):
+    """
+    Classify characters in string based on supplied character lists
+
+    Parameters:
+    base_string:        String to be classified
+    char_classes:       List of lists containing character lists
+
+    Returns:
+    List of dicts containing classified characters with their position
+    in the original string as the key to each dict entry
+    """
+
+    classes_out = []
+
+    for c in classes_in:
+        class_out = {
+            i: base_string[i]
+            for i in range(len(base_string))
+            if base_string[i] in c
+        }
+        classes_out.append(class_out)
+
+    return classes_out
 
 
 if __name__ == "__main__":
