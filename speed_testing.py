@@ -2,8 +2,6 @@
 
 import timeit
 
-REPS = 10000000
-LIST_SIZE = 100000
 
 # ASCII codes for different character classes
 char_symbols = list(range(33, 48))
@@ -15,20 +13,29 @@ sym_donotuse = [34, 39, 92, 96, 124]
 
 
 def main():
-#    list_create_testing()
-    list_remove_testing()
+    list_create_testing()
+#    list_remove_testing()
 
 def list_create_testing():
-    list_only = timeit.Timer("list(range(LIST_SIZE))", globals=globals())
-    with_comp = timeit.Timer("[x for x in range(LIST_SIZE)]", globals=globals())
+    REPS = 100000
+    LIST_SIZE = 10000
 
-    print("With list() function took {} seconds".format(list_only.timeit(REPS)))
+    list_func = timeit.Timer("list(range(LIST_SIZE))", globals=locals())
+    list_only = timeit.Timer("[range(LIST_SIZE)]", globals=locals())
+    with_comp = timeit.Timer("[x for x in range(LIST_SIZE)]", globals=locals())
+
+    print("With list() function took {} seconds".format(list_func.timeit(REPS)))
+    print("With list operators [] took {} seconds".format(list_only.timeit(REPS)))
     print("With list comprehensions took {} seconds".format(with_comp.timeit(REPS)))
-    # Conclusion is that list() function is almost twice as fast in this case
+    # Conclusion is that list operators [] is by far the fastest in this case
+    # However, the list() function is almost twice as fast as list comprehension
 
 def list_remove_testing():
-    with_sets = timeit.Timer("list(set(char_symbols)-set(sym_donotuse))", globals=globals())
-    with_comp = timeit.Timer("[x for x in char_symbols if x not in sym_donotuse]", globals=globals())
+    REPS = 1000
+    LIST_SIZE = 1000
+
+    with_sets = timeit.Timer("list(set(char_symbols)-set(sym_donotuse))", globals=locals())
+    with_comp = timeit.Timer("[x for x in char_symbols if x not in sym_donotuse]", globals=locals())
 
     print("With set() function took {} seconds".format(with_sets.timeit(REPS)))
     print("With list comprehension took {} seconds".format(with_comp.timeit(REPS)))
