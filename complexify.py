@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import random
 import sys
 
 def main():
@@ -8,7 +9,7 @@ def main():
     lcase_letters = [chr(c) for c in range(97, 123)]
     ucase_letters = [chr(c) for c in range(65, 91)]
     numbers = [chr(c) for c in range(48, 58)]
-    symbols = [chr(c) for c in range(33, 48)]
+    symbols = [chr(c) for c in range(32, 48)]
     symbols.extend([chr(c) for c in range(58, 65)])
     symbols.extend([chr(c) for c in range(91, 97)])
     symbols.extend([chr(c) for c in range(123, 127)])
@@ -20,6 +21,7 @@ def main():
     # However, if the original string includes any of these characters,
     # they will not be removed
     sym_donotuse = [chr(c) for c in [32, 34, 39, 92, 96, 124]]
+    valid_symbols = list(set(symbols) - set(sym_donotuse))
 
     default_char_count = 3
     default_ignore_chars = " "
@@ -58,6 +60,13 @@ def main():
     char_dict = classify(args.basestring, char_classes)
     print(char_dict)
 
+    # Determine how many characters of each class are present
+    class_sizes = [len(c) for c in char_dict]
+    print(class_sizes)
+
+    # NOTE: valid_replacement_symbols =
+    new_lcase = replace_chars(char_dict[0], symbols, 1)
+    print(new_lcase)
 
 
 def classify(string_in, classes_in):
@@ -84,6 +93,34 @@ def classify(string_in, classes_in):
         classes_out.append(class_out)
 
     return classes_out
+
+
+def replace_chars(chars_in, replacements, count):
+    """
+    Replace 'count' values in a dict with random characters from a supplied
+    list of replacements
+
+    Parameters:
+    chars_in:               Dict containing original keys/values
+    replacements:           List containing possible replacements
+    count:                  Maximum number of characters to be replaced
+
+    Returns:
+    Dict containing the same keys as 'chars_in' but up to 'count' values
+    replaced from the 'replacements' list.
+    Note that the returned dict will be the same size as 'chars_in', even
+    if 'count' is greater
+    """
+    chars_out = chars_in.copy()
+    valid_keys = set(chars_in.keys())
+    sane_count = min(count, len(chars_in))
+
+    for i in range(sane_count):
+        rand_key = random.choice(tuple(valid_keys))
+        chars_out[rand_key] = random.choice(replacements)
+        valid_keys.remove(rand_key)
+
+    return (chars_out)
 
 
 if __name__ == "__main__":
