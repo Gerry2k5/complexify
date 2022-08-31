@@ -60,13 +60,13 @@ def main():
 
 
 
-def classify(base_string, classes_in):
+def classify(string_in, classes_in):
     """
     Classify characters in string based on supplied character lists
 
     Parameters:
-    base_string:        String to be classified
-    char_classes:       List of lists containing character lists
+    string_in:          String to be classified
+    classes_in:         Character class lists encompassed in a list
 
     Returns:
     List of dicts containing classified characters with their position
@@ -77,9 +77,9 @@ def classify(base_string, classes_in):
 
     for c in classes_in:
         class_out = {
-            i: base_string[i]
-            for i in range(len(base_string))
-            if base_string[i] in c
+            i: string_in[i]
+            for i in range(len(string_in))
+            if string_in[i] in c
         }
         classes_out.append(class_out)
 
