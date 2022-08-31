@@ -13,11 +13,13 @@ def main():
     symbols.extend([chr(c) for c in range(91, 97)])
     symbols.extend([chr(c) for c in range(123, 127)])
 
-    # Remove symbols which should not be used as replacements, to avoid
+    # Symbols which should not be used as replacements, to avoid
     # characters which may be difficult to use on console sessions
     # as well as minimising the risk of causing SQL errors on broken systems
+    #
+    # However, if the original string includes any of these characters,
+    # they will not be removed
     sym_donotuse = [chr(c) for c in [32, 34, 39, 92, 96, 124]]
-    symbols = list(set(symbols) - set(sym_donotuse))
 
     default_char_count = 3
     default_ignore_chars = " "
