@@ -14,6 +14,8 @@ def main():
     symbols.extend([chr(c) for c in range(91, 97)])
     symbols.extend([chr(c) for c in range(123, 127)])
 
+    char_classes = [lcase_letters, ucase_letters, numbers, symbols]
+
     # Symbols which should not be used as replacements, to avoid
     # characters which may be difficult to use on console sessions
     # as well as minimising the risk of causing SQL errors on broken systems
@@ -23,14 +25,16 @@ def main():
     sym_donotuse = [chr(c) for c in [32, 34, 39, 92, 96, 124]]
     valid_symbols = list(set(symbols) - set(sym_donotuse))
 
-    default_char_count = 3
+    default_count = 1
     default_ignore_chars = " "
     default_basestring = ""
     # Collect stdin only if something has been passed (to prevent blocking)
     if not sys.stdin.isatty():
         default_basestring = "".join(sys.stdin.readlines()).rstrip("\n")
 
-    parser = argparse.ArgumentParser(description="Replace characters in a string to make it more complex")
+    parser = argparse.ArgumentParser(description="""Modify a string to ensure
+        that it contains at least a certain number of characters of each class
+        (uppercase, lowercase, numbers and symbols)""")
     parser.add_argument(
         "basestring",
         nargs="?",
@@ -42,30 +46,44 @@ def main():
         action="help"
     )
     parser.add_argument(
+        "-c", "--count",
+        type=int,
+        default=default_count,
+        help="""Number of characters of each of the 4 classes which should
+        be included in the output (Defaults to 1)"""
+    )
+    parser.add_argument(
         "-i", "--ignore",
         nargs="?",
         const="",
         default=default_ignore_chars,
-        help="characters to ignore (Defaults to '" + default_ignore_chars + "')"
+        help="Characters which should not be replaced (Defaults to '"
+            +default_ignore_chars + "')"
     )
     args = parser.parse_args()
     print(args)
 
     # TODO: It may be possible to convert this check to an argparse Action
+    # NOTE: the hardcoded 4 here is based on 1 character from each of
+    # 4 classes, so may need to be adjusted if the number of characters
+    # of each class (or even the number of classes) is made variable
     if len(args.basestring) < 4:
         print("Base String must be at least 4 characters")
         exit(1)
 
-    char_classes = [lcase_letters, ucase_letters, numbers, symbols]
+
+
     char_dict = classify(args.basestring, char_classes)
     print(char_dict)
+
+
 
     # Determine how many characters of each class are present
     class_sizes = [len(c) for c in char_dict]
     print(class_sizes)
 
     # NOTE: valid_replacement_symbols =
-    new_lcase = replace_chars(char_dict[0], symbols, 1)
+    new_lcase = random_dict(list(char_dict[0]), numbers, args.count)
     print(new_lcase)
 
 
@@ -95,32 +113,38 @@ def classify(string_in, classes_in):
     return classes_out
 
 
-def replace_chars(chars_in, replacements, count):
+def random_dict(keys_in, values_in, count):
     """
-    Replace 'count' values in a dict with random characters from a supplied
-    list of replacements
+    Generate a dict of (up to) 'count'/'keys_in' entries (whichever is lower)
+    from supplied lists of keys and values.
 
     Parameters:
-    chars_in:               Dict containing original keys/values
-    replacements:           List containing possible replacements
-    count:                  Maximum number of characters to be replaced
+    keys_in:                List containing allowed keys
+    values_in:              List containing allowed values
+    count:                  Maximum number of entries to be returned
 
     Returns:
-    Dict containing the same keys as 'chars_in' but up to 'count' values
-    replaced from the 'replacements' list.
-    Note that the returned dict will be the same size as 'chars_in', even
-    if 'count' is greater
+    Dict containing up to 'count' entries, with keys from the 'keys_in' list
+    and values from the 'values_in' list.
+
+    Each key can only appear once, but the values may appear more than once.
+
+    Note that the returned dict will never be larger than 'keys_in', even
+    if 'count' is greater.
+
+    Also, the items in the returned dict may be in a different order than
+    those in 'keys_in' (Only relevant if count is greater than 1).
     """
-    chars_out = chars_in.copy()
-    valid_keys = set(chars_in.keys())
-    sane_count = min(count, len(chars_in))
+    dict_out = {}
+    valid_keys = keys_in[:]
+    sane_count = min(count, len(valid_keys))
 
     for i in range(sane_count):
-        rand_key = random.choice(tuple(valid_keys))
-        chars_out[rand_key] = random.choice(replacements)
+        rand_key = random.choice(valid_keys)
+        dict_out[rand_key] = random.choice(values_in)
         valid_keys.remove(rand_key)
 
-    return (chars_out)
+    return (dict_out)
 
 
 if __name__ == "__main__":
