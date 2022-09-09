@@ -33,7 +33,7 @@ def main():
         default_basestring = "".join(sys.stdin.readlines()).rstrip("\n")
 
     parser = argparse.ArgumentParser(description="""Modify a string to ensure
-        that it contains at least a certain number of characters of each class
+        that it contains at least a minimum number of characters of each class
         (uppercase, lowercase, numbers and symbols)""")
     parser.add_argument(
         "basestring",
@@ -64,12 +64,12 @@ def main():
     print(args)
 
     # TODO: It may be possible to convert this check to an argparse Action
-    # NOTE: the hardcoded 4 here is based on 1 character from each of
-    # 4 classes, so may need to be adjusted if the number of characters
-    # of each class (or even the number of classes) is made variable
-    if len(args.basestring) < 4:
-        print("Base String must be at least 4 characters")
+    min_length = len(char_classes) * args.count
+    if len(args.basestring) < min_length:
+        print("Base String must be at least {} characters".format(min_length))
         exit(1)
+
+
 
 
 
