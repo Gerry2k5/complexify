@@ -14,32 +14,36 @@ def main():
     symbols.extend([chr(c) for c in range(91, 97)])
     symbols.extend([chr(c) for c in range(123, 127)])
 
-    char_classes = [lcase_letters, ucase_letters, numbers, symbols]
-
-    # Symbols which should not be used as replacements, to avoid
+    # Symbols which should not be used as replace, to avoid
     # characters which may be difficult to use on console sessions
     # as well as minimising the risk of causing SQL errors on broken systems
     #
     # However, if the original string includes any of these characters,
     # they will not be removed
-    sym_donotuse = [chr(c) for c in [32, 34, 39, 92, 96, 124]]
-    valid_symbols = list(set(symbols) - set(sym_donotuse))
+    unsafe_symbols = [chr(c) for c in [32, 34, 39, 92, 96, 124]]
+    safe_symbols = list(set(symbols) - set(unsafe_symbols))
+
+    char_classes = [lcase_letters, ucase_letters, numbers, symbols]
+    char_classes_safe = [lcase_letters, ucase_letters, numbers, safe_symbols]
+
+    class_count = len(char_classes)
+    class_indexes = range(class_count)
 
     default_count = 1
     default_ignore_chars = " "
-    default_basestring = ""
+    default_base_string = ""
     # Collect stdin only if something has been passed (to prevent blocking)
     if not sys.stdin.isatty():
-        default_basestring = "".join(sys.stdin.readlines()).rstrip("\n")
+        default_base_string = "".join(sys.stdin.readlines()).rstrip("\n")
 
     parser = argparse.ArgumentParser(description="""Modify a string to ensure
         that it contains at least a minimum number of characters of each class
         (uppercase, lowercase, numbers and symbols)""")
     parser.add_argument(
-        "basestring",
+        "base_string",
         nargs="?",
-        default=default_basestring,
-        help="Base String to be complexified"
+        default=default_base_string,
+        help="String to be complexified"
     )
     parser.add_argument(
         "-?",
@@ -49,8 +53,8 @@ def main():
         "-c", "--count",
         type=int,
         default=default_count,
-        help="""Number of characters of each of the 4 classes which should
-        be included in the output (Defaults to 1)"""
+        help="""Number of characters of each class which should be included
+        in the output (Defaults to 1)"""
     )
     parser.add_argument(
         "-i", "--ignore",
@@ -61,56 +65,112 @@ def main():
             +default_ignore_chars + "')"
     )
     args = parser.parse_args()
-    print(args)
 
     # TODO: It may be possible to convert this check to an argparse Action
-    min_length = len(char_classes) * args.count
-    if len(args.basestring) < min_length:
+    min_length = class_count * args.count
+    if len(args.base_string) < min_length:
         print("Base String must be at least {} characters".format(min_length))
         exit(1)
 
+    unclassed_chars = [
+        args.base_string[i]
+        for i in range(len(args.base_string))
+    ]
+    print("Unclassed", unclassed_chars)
+
+    for i in class_indexes:
+        classed_keys = classify(unclassed_chars, char_classes)
+        print("Classed: ", classed_keys)
+
+        print("i: ", i)
+        chars_needed = args.count - len(classed_keys[i])
+        print("Chars needed", chars_needed)
+        if  chars_needed > 0:
+            valid_keys = flatten_list([
+                discard(classed_keys[j], args.count)
+                for j in class_indexes
+            ])
+            print("Valid Keys", valid_keys)
+
+            valid_values = char_classes_safe[i]
+            print("Valid Values: ", valid_values)
+
+            replace = random_dict(valid_keys, valid_values, chars_needed)
+            print("Replacements: ", replace)
+
+            for key in replace:
+                unclassed_chars[key] = replace[key]
+            print("New Unclassed: ", unclassed_chars)
+
+    final_string = "".join(unclassed_chars)
+    print("Final String: ", final_string)
 
 
-
-
-    char_dict = classify(args.basestring, char_classes)
-    print(char_dict)
-
-
-
-    # Determine how many characters of each class are present
-    class_sizes = [len(c) for c in char_dict]
-    print(class_sizes)
-
-    # NOTE: valid_replacement_symbols =
-    new_lcase = random_dict(list(char_dict[0]), numbers, args.count)
-    print(new_lcase)
-
-
-def classify(string_in, classes_in):
+def classify(chars_in, classes_in):
     """
     Classify characters in string based on supplied character lists
 
     Parameters:
-    string_in:          String to be classified
+    chars_in:           List of characters to be classified
     classes_in:         Character class lists encompassed in a list
 
     Returns:
-    List of dicts containing classified characters with their position
-    in the original string as the key to each dict entry
+    List containing lists of the position of characters on the original list
+    separated into the given classes
     """
 
     classes_out = []
 
     for c in classes_in:
-        class_out = {
-            i: string_in[i]
-            for i in range(len(string_in))
-            if string_in[i] in c
-        }
+        class_out = [
+            i
+            for i in range(len(chars_in))
+            if chars_in[i] in c
+        ]
         classes_out.append(class_out)
 
     return classes_out
+
+
+def discard(entries_in, count):
+    """
+    Discard up to 'count' entries from a list
+
+    Parameters:
+    entries_in:             List containing original entries
+    count:                  Number of entries to be discarded
+
+    Returns:
+    List with up to 'count' entries discarded.
+    If 'count' is greater than the size of entries_in, an empty list
+    will be returned
+    """
+    entries_out = {}
+    if len(entries_in) > count:
+        entries_out = entries_in[:]
+
+        for i in range(count):
+            entries_out.remove(random.choice(entries_out))
+
+    return entries_out
+
+
+def flatten_list(lists_in):
+    """
+    Flatten multiple lists into a single list
+
+    Parameters:
+    lists_in:               List containing zero or more lists
+
+    Returns:
+    A sorted list of the entries in all contained lists
+    """
+    list_out = []
+    for list in range(len(lists_in)):
+        list_out.extend(lists_in[list])
+
+    list_out.sort()
+    return list_out
 
 
 def random_dict(keys_in, values_in, count):
