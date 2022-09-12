@@ -23,12 +23,6 @@ def main():
     unsafe_symbols = [chr(c) for c in [32, 34, 39, 92, 96, 124]]
     safe_symbols = list(set(symbols) - set(unsafe_symbols))
 
-    char_classes = [lcase_letters, ucase_letters, numbers, symbols]
-    char_classes_safe = [lcase_letters, ucase_letters, numbers, safe_symbols]
-
-    class_count = len(char_classes)
-    class_indexes = range(class_count)
-
     default_count = 1
     default_ignore_chars = " "
     default_base_string = ""
@@ -65,6 +59,18 @@ def main():
             +default_ignore_chars + "')"
     )
     args = parser.parse_args()
+    print(args)
+
+    char_classes = [
+        remove_ignored_chars(lcase_letters, args.ignore),
+        remove_ignored_chars(ucase_letters, args.ignore),
+        remove_ignored_chars(numbers, args.ignore),
+        remove_ignored_chars(symbols, args.ignore)
+    ]
+    char_classes_safe = [lcase_letters, ucase_letters, numbers, safe_symbols]
+
+    class_count = len(char_classes)
+    class_indexes = range(class_count)
 
     # TODO: It may be possible to convert this check to an argparse Action
     min_length = class_count * args.count
@@ -76,34 +82,26 @@ def main():
         args.base_string[i]
         for i in range(len(args.base_string))
     ]
-    print("Unclassed", unclassed_chars)
 
     for i in class_indexes:
         classed_keys = classify(unclassed_chars, char_classes)
-        print("Classed: ", classed_keys)
 
-        print("i: ", i)
         chars_needed = args.count - len(classed_keys[i])
-        print("Chars needed", chars_needed)
         if  chars_needed > 0:
             valid_keys = flatten_list([
                 discard(classed_keys[j], args.count)
                 for j in class_indexes
             ])
-            print("Valid Keys", valid_keys)
 
             valid_values = char_classes_safe[i]
-            print("Valid Values: ", valid_values)
 
             replace = random_dict(valid_keys, valid_values, chars_needed)
-            print("Replacements: ", replace)
 
             for key in replace:
                 unclassed_chars[key] = replace[key]
-            print("New Unclassed: ", unclassed_chars)
 
     final_string = "".join(unclassed_chars)
-    print("Final String: ", final_string)
+    print(final_string)
 
 
 def classify(chars_in, classes_in):
@@ -205,6 +203,23 @@ def random_dict(keys_in, values_in, count):
         valid_keys.remove(rand_key)
 
     return (dict_out)
+
+
+def remove_ignored_chars(char_list_in, ignore_chars_in):
+    """
+    Remove ignored characters from a list
+
+    Parameters:
+    char_list_in:           List of characters
+    ignore_chars_in:        String containing characters to remove from list
+
+    Returns:
+    A copy of the original list, with ignored characters removed
+    """
+    ignore_list = [c for c in ignore_chars_in]
+    char_list_out = list(set(char_list_in) - set(ignore_list))
+
+    return char_list_out
 
 
 if __name__ == "__main__":
