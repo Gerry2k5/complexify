@@ -14,7 +14,7 @@ def main():
     symbols.extend([chr(c) for c in range(91, 97)])
     symbols.extend([chr(c) for c in range(123, 127)])
 
-    # Symbols which should not be used as replace, to avoid
+    # Symbols which should not be used as replacements, to avoid
     # characters which may be difficult to use on console sessions
     # as well as minimising the risk of causing SQL errors on broken systems
     #
@@ -59,13 +59,10 @@ def main():
             +default_ignore_chars + "')"
     )
     args = parser.parse_args()
-    print(args)
 
     char_classes = [
-        remove_ignored_chars(lcase_letters, args.ignore),
-        remove_ignored_chars(ucase_letters, args.ignore),
-        remove_ignored_chars(numbers, args.ignore),
-        remove_ignored_chars(symbols, args.ignore)
+        remove_ignored_chars(char_class, args.ignore)
+        for char_class in [lcase_letters, ucase_letters, numbers, safe_symbols]
     ]
     char_classes_safe = [lcase_letters, ucase_letters, numbers, safe_symbols]
 
@@ -88,17 +85,16 @@ def main():
 
         chars_needed = args.count - len(classed_keys[i])
         if  chars_needed > 0:
+            # Ensure that 'count' keys are removed from each class
             valid_keys = flatten_list([
                 discard(classed_keys[j], args.count)
                 for j in class_indexes
             ])
-
             valid_values = char_classes_safe[i]
 
-            replace = random_dict(valid_keys, valid_values, chars_needed)
-
-            for key in replace:
-                unclassed_chars[key] = replace[key]
+            replacements = random_dict(valid_keys, valid_values, chars_needed)
+            for key in replacements:
+                unclassed_chars[key] = replacements[key]
 
     final_string = "".join(unclassed_chars)
     print(final_string)
@@ -143,7 +139,7 @@ def discard(entries_in, count):
     If 'count' is greater than the size of entries_in, an empty list
     will be returned
     """
-    entries_out = {}
+    entries_out = []
     if len(entries_in) > count:
         entries_out = entries_in[:]
 
@@ -164,8 +160,8 @@ def flatten_list(lists_in):
     A sorted list of the entries in all contained lists
     """
     list_out = []
-    for list in range(len(lists_in)):
-        list_out.extend(lists_in[list])
+    for list in lists_in:
+        list_out.extend(list)
 
     list_out.sort()
     return list_out
